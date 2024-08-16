@@ -1,8 +1,10 @@
 import { getContacts, createContact } from "@/contacts";
-import { Link, useLoaderData, Form} from "react-router-dom";
+import { useEffect } from "react";
+import { NavLink } from "react-router-dom";
+import {  useLoaderData, Form, redirect, useNavigation , useSubmit} from "react-router-dom";
 import { Outlet } from "react-router-dom";
 
-interface Params {
+export interface Params {
   contactId?: string;
 }
 
@@ -13,28 +15,40 @@ export interface MainStructure {
   context?: string; // Can adjust the type based on your use case
 }
 
-export async function loader(query : MainStructure) {
+export async function loader({ request } : MainStructure) {
 
   
-  const contacts = await getContacts(query);
+  const url = new URL(request.url);
+  const q = url.searchParams.get("q");
+  const contacts = await getContacts(q);
   
-  return { contacts };
+  return { contacts, q };
 }
 
 export async function action() {
   const contact = await createContact();
-  return { contact };
+  return redirect(`/contacts/${contact.id}/edit`);
 }
 
 
 export default function Root() {
-  const { contacts } = useLoaderData() as { contacts: {
+  const { contacts , q } = useLoaderData() as { contacts: {
     id: string;
     first: string;
     last: string;
     favorite: boolean;
-  }[] };
-  
+  }[] ,
+  q: string };
+  const navigation = useNavigation();
+  const submit = useSubmit();
+
+  useEffect(() => {
+    
+    const element = document.getElementById("q") as HTMLInputElement;
+    if (element) {
+      element.value = q;
+    }
+  }, [q]);
 
     return (
       <>
@@ -48,6 +62,10 @@ export default function Root() {
                 placeholder="Search"
                 type="search"
                 name="q"
+                defaultValue={q}
+                onChange={(event) => {
+                  submit(event.currentTarget.form);
+                }}
               />
               <div
                 id="search-spinner"
@@ -68,7 +86,15 @@ export default function Root() {
             <ul>
               {contacts.map((contact) => (
                 <li key={contact.id}>
-                  <Link to={`contacts/${contact.id}`}>
+                  <NavLink to={`contacts/${contact.id}`}
+                                      className={({ isActive, isPending }) =>
+                                        isActive
+                                          ? "active"
+                                          : isPending
+                                          ? "pending"
+                                          : ""
+                                      }
+                  >
                     {contact.first || contact.last ? (
                       <>
                         {contact.first} {contact.last}
@@ -77,7 +103,7 @@ export default function Root() {
                       <i>No Name</i>
                     )}{" "}
                     {contact.favorite && <span>★</span>}
-                  </Link>
+                  </NavLink>
                 </li>
               ))}
             </ul>
@@ -88,7 +114,12 @@ export default function Root() {
           )}
           </nav>
         </div>
-        <div id="detail">
+        <div 
+        id="detail"
+        className={
+          navigation.state === "loading" ? "loading" : ""
+        }
+        >
         <Outlet />
         </div>
       </>

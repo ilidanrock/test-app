@@ -5,18 +5,17 @@ export async function loader({ params }: { params: { contactId?: string } }) {
   const contact = await getContact(params.contactId);
   return { contact };
 }
-
+export interface user {
+  id: string;
+  first: string;
+  last: string;
+  twitter: string;
+  avatar: string;
+  notes: string;
+  favorite: boolean;
+}
 export interface Contact {
-  contact: {
-    id: string;
-    first: string;
-    last: string;
-    twitter: string;
-    avatar: string;
-    notes: string;
-    favorite: boolean;
-
-  }
+  contact: user
 }
 
 export default function Contact() {

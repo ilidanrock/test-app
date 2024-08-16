@@ -2,9 +2,9 @@ import localforage from "localforage";
 import { matchSorter } from "match-sorter";
 import sortBy from "sort-by";
 import { MainStructure } from "./routes/root";
-import { Contact } from "./routes/contact";
+import { Contact, user } from "./routes/contact";
 
-export async function getContacts(query?: MainStructure ) {
+export async function getContacts(query?: MainStructure | null | string) {
   await fakeNetwork(`getContacts:${query}`);
   let contacts = await localforage.getItem("contacts") as Contact[];
   console.log("query", query);
@@ -43,9 +43,9 @@ export async function updateContact(id, updates) {
   return contact;
 }
 
-export async function deleteContact(id) {
-  let contacts = await localforage.getItem("contacts");
-  let index = contacts.findIndex(contact => contact.id === id);
+export async function deleteContact(id?: string) {
+  const contacts = await localforage.getItem("contacts") as user[];
+  const index = contacts.findIndex(contact => contact.id === id);
   if (index > -1) {
     contacts.splice(index, 1);
     await set(contacts);
